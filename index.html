@@ -232,7 +232,7 @@ function newDoc(){
   return { id:uid(), subject:"", type:"major", levels:[...PRESETS.major], totalItems:60,
     term:"Final", semester:"2nd", ay:"2025-2026",
     program:"Bachelor of Science in Information Technology", college:"", campus:"Lubang",
-    dateSubmitted:todayISO(), pctDecimals:1, placement:"random", seed:Math.floor(Math.random()*1e9),
+    dateSubmitted:todayISO(), pctDecimals:"auto", placement:"random", seed:Math.floor(Math.random()*1e9),
     topics:[{title:"",subtopics:[],outcomes:[],hours:0}], overrides:{}, sigs:JSON.parse(JSON.stringify(DEFAULT_SIGS)),
     updatedAt:Date.now() };
 }
@@ -240,6 +240,7 @@ function normalize(d){
   const n = Object.assign(newDoc(), d);
   n.sigs = Object.assign(JSON.parse(JSON.stringify(DEFAULT_SIGS)), d.sigs||{});
   n.overrides = d.overrides || {};
+  if(!d.pctMode2){ n.pctDecimals="auto"; n.pctMode2=1; }
   n.campus = String(n.campus||"").replace(/\s*campus\s*$/i,"");
   if(n.sigs.approved.title==="Director for Instruction") n.sigs.approved={name:"",title:"Dean"};
   if(n.sigs.reviewed.title==="Program Chair") n.sigs.reviewed.title="Program Chair, BSIT";
@@ -310,9 +311,8 @@ function compute(d){
   const H = sum(hrs), N = Math.max(0, Math.round(+d.totalItems||0));
   const L = d.levels.map(x=>+x||0), Lsum = sum(L);
   const n = d.topics.length;
-  const scale = Math.pow(10, d.pctDecimals);
   const exactPct = hrs.map(h=> H>0 ? h/H*100 : 0);
-  const pct = H>0 ? lrm(exactPct.map(p=>p*scale), 100*scale).map(x=>x/scale) : hrs.map(()=>0);
+  const {pct, dec} = choosePct(exactPct, d.pctDecimals, H);
   const exactItems = hrs.map(h=> H>0 ? h/H*N : 0);
   const items = H>0 ? lrm(exactItems, N) : hrs.map(()=>0);
   const colExact = L.map(p=> Lsum>0 ? N*p/Lsum : 0);
@@ -336,10 +336,23 @@ function compute(d){
   if(H<=0) problems.push("Enter the hours taught for at least one topic.");
   if(Math.abs(Lsum-100)>EPS) problems.push(`Cognitive level percentages add up to ${fmt(Lsum)}%, not 100%.`);
   rowSums.forEach((s,i)=>{ if(s!==items[i]) problems.push(`Topic ${i+1}: level counts add up to ${s}, but the topic has ${items[i]} items.`); });
-  return {hrs,H,N,L,exactPct,pct,exactItems,items,colT,E,auto,cells,rowSums,colSums,totalCells,ids,problems};
+  return {pctTotal:Math.round(sum(pct)*100)/100,dec,hrs,H,N,L,exactPct,pct,exactItems,items,colT,E,auto,cells,rowSums,colSums,totalCells,ids,problems};
 }
 function fmt(x,dec){ if(dec===undefined){ return (Math.round(x*100)/100).toString(); } return (+x).toFixed(dec).replace(/\.0+$/,"").replace(/(\.\d*?)0+$/,"$1"); }
-function fmtPct(x,d){ return d.pctDecimals ? (+x).toFixed(d.pctDecimals).replace(/\.0$/,"") : String(Math.round(x)); }
+// Percent: round off when the rounded values still total exactly 100; otherwise keep just enough decimals.
+function choosePct(exact, mode, H){
+  if(!(H>0)) return {pct:exact.map(()=>0), dec:0};
+  const lr = dec => { const sc=Math.pow(10,dec); return lrm(exact.map(p=>p*sc),100*sc).map(x=>x/sc); };
+  if(mode==="auto" || mode===undefined){
+    for(let dec=0; dec<=1; dec++){
+      const sc=Math.pow(10,dec), r=exact.map(p=>Math.round(p*sc+1e-9)/sc);
+      if(Math.abs(sum(r)-100)<1e-9) return {pct:r, dec};
+    }
+    return {pct:lr(1), dec:1};
+  }
+  const dec=+mode||0; return {pct:lr(dec), dec};
+}
+function fmtPct(x,dec){ return (+x).toFixed(dec).replace(/(\.\d*?)0+$/,"$1").replace(/\.$/,""); }
 
 /* ---------------- persistence ---------------- */
 const saveTimers = {};
@@ -477,7 +490,7 @@ function topicHTML(t,i,n){
 function renderTable(){
   const d=cur(); if(!d) return;
   const c=compute(d);
-  d.topics.forEach((t,i)=>{ const s=document.getElementById("share"+i); if(s) s.textContent = c.H>0 ? `${fmtPct(c.pct[i],d)}% · ${c.items[i]} items` : ""; });
+  d.topics.forEach((t,i)=>{ const s=document.getElementById("share"+i); if(s) s.textContent = c.H>0 ? `${fmtPct(c.pct[i],c.dec)}% · ${c.items[i]} items` : ""; });
   const colOk = c.colSums.every((s,j)=>s===c.colT[j]);
   const chips = [
     `<span class="chip">Total hours <b>${fmt(c.H)}</b></span>`,
@@ -495,7 +508,7 @@ function renderTable(){
       <td class="lo">${t.outcomes.length?`<ol>${t.outcomes.map(o=>`<li>${esc(o)}</li>`).join("")}</ol>`:""}</td>
       <td class="tp"><div class="t">${esc(t.title)||'<span class="hint">Untitled topic</span>'}</div>${t.subtopics.length?`<ul>${t.subtopics.map(s=>`<li>${esc(s)}</li>`).join("")}</ul>`:""}</td>
       <td class="c">${fmt(c.hrs[i])}</td>
-      <td class="c">${fmtPct(c.pct[i],d)}${showWork&&c.H?`<span class="work-note">${fmt(c.hrs[i])}÷${fmt(c.H)}×100</span><span class="work-note">= ${c.exactPct[i].toFixed(2)}</span>`:""}</td>
+      <td class="c">${fmtPct(c.pct[i],c.dec)}${showWork&&c.H?`<span class="work-note">${fmt(c.hrs[i])}÷${fmt(c.H)}×100</span><span class="work-note">= ${c.exactPct[i].toFixed(2)}</span>`:""}</td>
       <td class="c">${c.items[i]}${showWork&&c.H?`<span class="work-note">${c.exactItems[i].toFixed(2)} → ${c.items[i]}</span>`:""}</td>
       ${[0,1,2].map(j=>{ const k=i+"-"+j, ed=(k in d.overrides);
         return `<td class="cog ${ed?"edited":""}">${adjust?`<input type="number" min="0" step="1" data-ov="${k}" value="${c.cells[i][j]}" aria-label="Topic ${i+1} ${LEVELS[j].a}${LEVELS[j].b} items">`:`<div class="cnt">${c.cells[i][j]}</div>`}
@@ -514,7 +527,7 @@ function renderTable(){
         </select></div>
       ${d.placement==="random"?`<button class="btn sm" type="button" data-act="shuffle">Reshuffle numbers</button>`:""}
       <div class="f" style="flex-direction:row;align-items:center;gap:8px"><label for="f-dec" style="white-space:nowrap">Percent</label>
-        <select id="f-dec" data-k="pctDecimals" data-num style="width:auto"><option value="0" ${d.pctDecimals==0?"selected":""}>Whole numbers</option><option value="1" ${d.pctDecimals==1?"selected":""}>1 decimal</option></select></div>
+        <select id="f-dec" data-k="pctDecimals" style="width:auto"><option value="auto" ${d.pctDecimals==="auto"?"selected":""}>Auto — round off when it still totals 100</option><option value="0" ${d.pctDecimals==="0"?"selected":""}>Always whole numbers</option><option value="1" ${d.pctDecimals==="1"?"selected":""}>Always 1 decimal</option></select></div>
       <label class="toggle"><input type="checkbox" id="tg-work" ${showWork?"checked":""}> Show working</label>
       <label class="toggle"><input type="checkbox" id="tg-adj" ${adjust?"checked":""}> Adjust counts by hand</label>
       ${hasOv?`<button class="btn sm ghost" type="button" data-act="clearOv">Reset to computed counts</button>`:""}
@@ -533,7 +546,7 @@ function renderTable(){
           <tr class="pct">${d.levels.map(p=>`<th>${fmt(p)}%</th>`).join("")}</tr>
         </thead>
         <tbody>${rows}</tbody>
-        <tfoot><tr><td></td><td class="lbl-cell" style="text-align:center">Total</td><td class="c">${fmt(c.H)}</td><td class="c">${c.H?"100":"0"}</td><td class="c">${c.totalCells}</td>${c.colSums.map(s=>`<td class="c">${s}</td>`).join("")}</tr></tfoot>
+        <tfoot><tr><td></td><td class="lbl-cell" style="text-align:center">Total</td><td class="c">${fmt(c.H)}</td><td class="c">${fmtPct(c.pctTotal,c.dec)}%</td><td class="c">${c.totalCells}</td>${c.colSums.map(s=>`<td class="c">${s}</td>`).join("")}</tr></tfoot>
       </table>
       <div class="sheet-sign">${[["prepared","Prepared by:"],["reviewed","Reviewed:"],["approved","Approved:"]].map(([k,t])=>`<div><div>${t}</div><div class="who">${esc(d.sigs[k].name)||"&nbsp;"}</div><div class="role">${esc(d.sigs[k].title)}</div></div>`).join("")}</div>
     </div>
@@ -687,10 +700,10 @@ function tableXML(d,c){
     const lo = t.outcomes.length ? t.outcomes.map((o,k)=>P(R(`${k+1}.`)+R("",{tab:1})+R(o),{ind:360,after:60})).join("") : P("");
     const tp = P(R(t.title,{b:true,sz:24}),{after:40}) + t.subtopics.map(s=>P(R("•")+R("",{tab:1})+R(s),{ind:360})).join("");
     const cog = [0,1,2].map(j=>TC(COLS[5+j], P(R(String(c.cells[i][j])),{jc:"center"}) + (c.ids[i][j].length?P(R(`(${c.ids[i][j].join(", ")})`,{sz:20}),{jc:"center"}):"")));
-    x += `<w:tr>${TC(COLS[0],lo,{va:"center"})}${TC(COLS[1],tp,{va:"top"})}${TC(COLS[2],P(R(fmt(c.hrs[i])),{jc:"center"}))}${TC(COLS[3],P(R(fmtPct(c.pct[i],d)),{jc:"center"}))}${TC(COLS[4],P(R(String(c.items[i])),{jc:"center"}))}${cog.join("")}</w:tr>`;
+    x += `<w:tr>${TC(COLS[0],lo,{va:"center"})}${TC(COLS[1],tp,{va:"top"})}${TC(COLS[2],P(R(fmt(c.hrs[i])),{jc:"center"}))}${TC(COLS[3],P(R(fmtPct(c.pct[i],c.dec)),{jc:"center"}))}${TC(COLS[4],P(R(String(c.items[i])),{jc:"center"}))}${cog.join("")}</w:tr>`;
   });
   const tb = s => P(R(String(s),{b:true}),{jc:"center"});
-  x += `<w:tr>${TC(COLS[0],"",{shd:1})}${TC(COLS[1],tb("Total"),{shd:1})}${TC(COLS[2],tb(fmt(c.H)),{shd:1})}${TC(COLS[3],tb(c.H?100:0),{shd:1})}${TC(COLS[4],tb(c.totalCells),{shd:1})}${c.colSums.map((s,j)=>TC(COLS[5+j],tb(s),{shd:1})).join("")}</w:tr>`;
+  x += `<w:tr>${TC(COLS[0],"",{shd:1})}${TC(COLS[1],tb("Total"),{shd:1})}${TC(COLS[2],tb(fmt(c.H)),{shd:1})}${TC(COLS[3],tb(fmtPct(c.pctTotal,c.dec)+"%"),{shd:1})}${TC(COLS[4],tb(c.totalCells),{shd:1})}${c.colSums.map((s,j)=>TC(COLS[5+j],tb(s),{shd:1})).join("")}</w:tr>`;
   return x + `</w:tbl>`;
 }
 function sigXML(d){
