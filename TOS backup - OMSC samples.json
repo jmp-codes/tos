@@ -17,7 +17,7 @@
    "semester": "2nd",
    "ay": "2025-2026",
    "program": "Bachelor of Science in Information Technology",
-   "campus": "Lubang Campus",
+   "campus": "Lubang",
    "dateSubmitted": "2026-05-07",
    "pctDecimals": 0,
    "placement": "random",
@@ -91,15 +91,16 @@
     },
     "reviewed": {
      "name": "MARIA KRISTINA S. TANGI, MSIT",
-     "title": "Program Chair"
+     "title": "Program Chair, BSIT"
     },
     "approved": {
-     "name": "ANGELITO V. QUIÑONES JR., PhD",
-     "title": "Director for Instruction"
+     "name": "",
+     "title": "Dean"
     }
    },
    "order": 0,
-   "updatedAt": 1790134134075
+   "updatedAt": 1790134134075,
+   "college": ""
   },
   {
    "id": "sample2",
@@ -115,7 +116,7 @@
    "semester": "2nd",
    "ay": "2025-2026",
    "program": "Bachelor of Science in Information Technology",
-   "campus": "Lubang Campus",
+   "campus": "Lubang",
    "dateSubmitted": "2026-05-07",
    "pctDecimals": 1,
    "placement": "random",
@@ -172,15 +173,16 @@
     },
     "reviewed": {
      "name": "MARIA KRISTINA S. TANGI, MSIT",
-     "title": "Program Chair"
+     "title": "Program Chair, BSIT"
     },
     "approved": {
-     "name": "ANGELITO V. QUIÑONES JR., PhD",
-     "title": "Director for Instruction"
+     "name": "",
+     "title": "Dean"
     }
    },
    "order": 1,
-   "updatedAt": 1790134134075
+   "updatedAt": 1790134134075,
+   "college": ""
   },
   {
    "id": "sample3",
@@ -196,7 +198,7 @@
    "semester": "2nd",
    "ay": "2025-2026",
    "program": "Bachelor of Science in Information Technology",
-   "campus": "Lubang Campus",
+   "campus": "Lubang",
    "dateSubmitted": "2026-05-07",
    "pctDecimals": 1,
    "placement": "random",
@@ -251,15 +253,16 @@
     },
     "reviewed": {
      "name": "MARIA KRISTINA S. TANGI, MSIT",
-     "title": "Program Chair"
+     "title": "Program Chair, BSIT"
     },
     "approved": {
-     "name": "ANGELITO V. QUIÑONES JR., PhD",
-     "title": "Director for Instruction"
+     "name": "",
+     "title": "Dean"
     }
    },
    "order": 2,
-   "updatedAt": 1790134134075
+   "updatedAt": 1790134134075,
+   "college": ""
   }
  ]
 }
