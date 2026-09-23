@@ -737,10 +737,11 @@ function tableXML(d,c){
   x += `<w:tr>${heads.map((h,k)=>TC(COLS[k],"",{vm:1,shd:1})).join("")}${LEVELS.map((l,j)=>TC(COLS[5+j], P(R(l.a,{b:true,i:true}),{jc:"center"})+P(R(l.b,{b:true,i:true}),{jc:"center"}),{shd:1})).join("")}</w:tr>`;
   x += `<w:tr>${heads.map((h,k)=>TC(COLS[k],"",{vm:1,shd:1})).join("")}${d.levels.map((p,j)=>TC(COLS[5+j],P(R(fmt(p)+"%",{i:true}),{jc:"center"}),{shd:1})).join("")}</w:tr>`;
   d.topics.forEach((t,i)=>{
-    const lo = t.outcomes.length ? t.outcomes.map((o,k)=>P(R(`${k+1}.`)+R("",{tab:1})+R(o),{ind:360,after:60})).join("") : P("");
-    const tp = P(R(t.title,{b:true,sz:24}),{after:40}) + t.subtopics.map(s=>P(R("•")+R("",{tab:1})+R(s),{ind:360})).join("");
-    const cog = [0,1,2].map(j=>TC(COLS[5+j], P(R(String(c.cells[i][j])),{jc:"center"}) + (c.ids[i][j].length?P(R(`(${c.ids[i][j].join(", ")})`,{sz:20}),{jc:"center"}):"")));
-    x += `<w:tr>${TC(COLS[0],lo,{va:"center"})}${TC(COLS[1],tp,{va:"top"})}${TC(COLS[2],P(R(fmt(c.hrs[i])),{jc:"center"}))}${TC(COLS[3],P(R(fmtPct(c.pct[i],c.dec)),{jc:"center"}))}${TC(COLS[4],P(R(String(c.items[i])),{jc:"center"}))}${cog.join("")}</w:tr>`;
+    const F12={sz:24};
+    const lo = t.outcomes.length ? t.outcomes.map((o,k)=>P(R(`${k+1}.`,F12)+R("",{tab:1,sz:24})+R(o,F12),{ind:360,after:60})).join("") : P("");
+    const tp = P(R(t.title,{b:true,sz:24}),{after:40}) + t.subtopics.map(s=>P(R("•",F12)+R("",{tab:1,sz:24})+R(s,F12),{ind:360})).join("");
+    const cog = [0,1,2].map(j=>TC(COLS[5+j], P(R(String(c.cells[i][j]),F12),{jc:"center"}) + (c.ids[i][j].length?P(R(`(${c.ids[i][j].join(", ")})`,{sz:20}),{jc:"center"}):"")));
+    x += `<w:tr>${TC(COLS[0],lo,{va:"center"})}${TC(COLS[1],tp,{va:"top"})}${TC(COLS[2],P(R(fmt(c.hrs[i]),F12),{jc:"center"}))}${TC(COLS[3],P(R(fmtPct(c.pct[i],c.dec),F12),{jc:"center"}))}${TC(COLS[4],P(R(String(c.items[i]),F12),{jc:"center"}))}${cog.join("")}</w:tr>`;
   });
   const tb = s => P(R(String(s),{b:true}),{jc:"center"});
   x += `<w:tr>${TC(COLS[0],"",{shd:1})}${TC(COLS[1],tb("Total"),{shd:1})}${TC(COLS[2],tb(fmt(c.H)),{shd:1})}${TC(COLS[3],tb(fmtPct(c.pctTotal,c.dec)+"%"),{shd:1})}${TC(COLS[4],tb(c.totalCells),{shd:1})}${c.colSums.map((s,j)=>TC(COLS[5+j],tb(s),{shd:1})).join("")}</w:tr>`;
