@@ -432,7 +432,7 @@ function renderWork(){
       <div class="f"><label for="f-ay">Academic year</label><input id="f-ay" data-k="ay" value="${esc(d.ay)}" placeholder="2025-2026"></div>
       <div class="f"><label for="f-date">Date submitted</label><input id="f-date" type="date" data-k="dateSubmitted" value="${esc(d.dateSubmitted)}"></div>
       <div class="f span2"><label for="f-prog">Curricular program</label><input id="f-prog" data-k="program" value="${esc(d.program)}"></div>
-      <div class="f"><label for="f-college">College of</label><input id="f-college" data-k="college" value="${esc(d.college)}" placeholder="e.g. Computer Studies"></div>
+      <div class="f span2"><label for="f-college">Heading line (Old English)</label><input id="f-college" data-k="college" value="${esc(d.college)}" placeholder="${esc(d.program)}"><span class="hint">Leave blank to use the curricular program</span></div>
       <div class="f"><label for="f-campus">Campus</label><input id="f-campus" data-k="campus" value="${esc(d.campus)}" placeholder="Lubang"><span class="hint">Printed as “${esc(d.campus||"____")} Campus”</span></div>
     </div>
     <div class="sigs">
@@ -522,7 +522,7 @@ function renderTable(){
     <div class="form-sheet">
       <div class="sheet-title">
         <div class="u">Republic of the Philippines</div><div class="uni">OCCIDENTAL MINDORO STATE UNIVERSITY</div><div class="u">Labangan, San Jose, Occidental Mindoro</div>
-        <div class="col">College of ${d.college?esc(d.college):"<span class=\"bl\">&nbsp;</span>"}</div><div class="u">${d.campus?esc(d.campus):"____"} Campus</div>
+        <div class="col">${esc(headingText(d))}</div><div class="u">${d.campus?esc(d.campus):"____"} Campus</div>
         <div class="rule"></div>
         <div class="k">Table of Specifications</div><div class="s">${esc(d.subject)||"Untitled subject"}</div><div class="e">${esc(examLine)}</div></div>
       <div class="meta-line"><span>Curricular Program: <u>${esc(d.program)}</u></span><span>Date Submitted: <u>${esc(longDate(d.dateSubmitted))}</u></span></div>
@@ -648,6 +648,7 @@ function P(runs,o={}){
   return `<w:p>${ppr}${runs}</w:p>`;
 }
 const blank = (text,n) => text ? text : "_".repeat(n);
+function headingText(d){ return (d.college||"").trim() || d.program || ""; }
 const HEAD_SHD = '<w:shd w:val="clear" w:color="auto" w:fill="B4C6E7"/>';
 function TC(w, paras, o={}){
   return `<w:tc><w:tcPr><w:tcW w:w="${w}" w:type="dxa"/>${o.span?`<w:gridSpan w:val="${o.span}"/>`:""}${o.vm==="restart"?'<w:vMerge w:val="restart"/>':o.vm?'<w:vMerge/>':""}${o.shd?HEAD_SHD:""}<w:vAlign w:val="${o.va||"center"}"/></w:tcPr>${paras||P("")}</w:tc>`;
@@ -666,10 +667,10 @@ function headerXML(d){
     + sp("Labangan, San Jose, Occidental Mindoro")
     + P(R("Website: ")+R("www.omsc.edu.ph",{u:true,color:"0563C1"})+R("   Email address: ")+R("president@omsc.edu.ph",{u:true}),{jc:"center"})
     + sp("Tele/Fax: (043) 491-1460")
-    + P(R("College of ",{font:"Old English Text MT",b:true,sz:32})+R(blank(d.college,22),{font:"Old English Text MT",b:true,sz:32,u:!!d.college}),{jc:"center",before:200})
-    + P(R(blank(d.campus,14),{sz:24,u:!!d.campus})+R(" Campus",{sz:24}),{jc:"center",bdr:rule,after:240})
+    + P(R(headingText(d),{font:"Old English Text MT",sz:32}),{jc:"center",before:200})
+    + P(R(`${d.campus||"____"} Campus`,{sz:24}),{jc:"center",bdr:rule,after:240})
     + P(R("TABLE OF SPECIFICATIONS",{b:true}),{jc:"center",before:120,after:240})
-    + P(R(d.subject||"_".repeat(40),{b:true,u:!!d.subject,sz:24}),{jc:"center"})
+    + P(R(d.subject||"_".repeat(40),{b:true,sz:24}),{jc:"center"})
     + P(exam,{jc:"center",after:240})
     + P(R("Curricular Program: ",{i:true})+R(blank(d.program,30),{i:true,u:!!d.program})+R("",{tab:1})+R("Date Submitted: ",{i:true})+R(blank(longDate(d.dateSubmitted),20),{i:true,u:!!d.dateSubmitted}),
         {tabs:'<w:tabs><w:tab w:val="right" w:pos="15840"/></w:tabs>',after:120});
